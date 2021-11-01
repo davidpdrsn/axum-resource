@@ -5,7 +5,7 @@ use axum::{
     handler::{self, Handler},
     http::{Request, Response},
     routing::{
-        service_method_router::{delete, get, on, post},
+        service_method_routing::{delete, get, on, post},
         MethodFilter,
     },
     Router,
@@ -66,7 +66,7 @@ impl<B>
 impl<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
     Resource<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
 where
-    B: Send + Sync + 'static,
+    B: Send + 'static,
 {
     pub fn index<H, T>(
         self,
