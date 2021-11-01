@@ -1,0 +1,11 @@
+[package]
+name = "axum-resource"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { git = "https://github.com/tokio-rs/axum.git" }
+tower-service = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
