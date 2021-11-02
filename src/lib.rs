@@ -17,8 +17,18 @@ use std::{
 };
 use tower_service::Service;
 
-pub struct Resource<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B = Body>
-{
+pub struct ResourceBuilder<
+    Index,
+    Create,
+    New,
+    Show,
+    Edit,
+    Update,
+    Destroy,
+    Nest,
+    NestCollection,
+    B = Body,
+> {
     path: String,
     index: Option<Index>,
     create: Option<Create>,
@@ -33,7 +43,7 @@ pub struct Resource<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestC
 }
 
 impl<B>
-    Resource<
+    ResourceBuilder<
         NeverService,
         NeverService,
         NeverService,
@@ -47,7 +57,7 @@ impl<B>
     >
 {
     pub fn named(path: &str) -> Self {
-        Resource {
+        ResourceBuilder {
             path: path.to_string(),
             index: None,
             create: None,
@@ -64,14 +74,14 @@ impl<B>
 }
 
 impl<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
-    Resource<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
+    ResourceBuilder<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
 where
     B: Send + 'static,
 {
     pub fn index<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         handler::IntoService<H, B, T>,
         Create,
         New,
@@ -86,7 +96,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: Some(handler.into_service()),
             create: self.create,
@@ -104,7 +114,7 @@ where
     pub fn create<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         handler::IntoService<H, B, T>,
         New,
@@ -119,7 +129,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: Some(handler.into_service()),
@@ -137,7 +147,7 @@ where
     pub fn new<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         Create,
         handler::IntoService<H, B, T>,
@@ -152,7 +162,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -170,7 +180,7 @@ where
     pub fn show<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         Create,
         New,
@@ -185,7 +195,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -203,7 +213,7 @@ where
     pub fn edit<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         Create,
         New,
@@ -218,7 +228,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -236,7 +246,7 @@ where
     pub fn update<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         Create,
         New,
@@ -251,7 +261,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -269,7 +279,7 @@ where
     pub fn destroy<H, T>(
         self,
         handler: H,
-    ) -> Resource<
+    ) -> ResourceBuilder<
         Index,
         Create,
         New,
@@ -284,7 +294,7 @@ where
     where
         H: Handler<B, T>,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -302,7 +312,7 @@ where
     pub fn nest<T>(
         self,
         svc: T,
-    ) -> Resource<Index, Create, New, Show, Edit, Update, Destroy, T, NestCollection, B>
+    ) -> ResourceBuilder<Index, Create, New, Show, Edit, Update, Destroy, T, NestCollection, B>
     where
         T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible>
             + Clone
@@ -310,7 +320,7 @@ where
             + 'static,
         T::Future: Send + 'static,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -328,7 +338,7 @@ where
     pub fn nest_collection<T>(
         self,
         svc: T,
-    ) -> Resource<Index, Create, New, Show, Edit, Update, Destroy, Nest, T, B>
+    ) -> ResourceBuilder<Index, Create, New, Show, Edit, Update, Destroy, Nest, T, B>
     where
         T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible>
             + Clone
@@ -336,7 +346,7 @@ where
             + 'static,
         T::Future: Send + 'static,
     {
-        Resource {
+        ResourceBuilder {
             path: self.path,
             index: self.index,
             create: self.create,
@@ -350,28 +360,36 @@ where
             _body: PhantomData,
         }
     }
+}
 
-    pub fn into_router(self) -> Router<B>
-    where
-        Index: ResourceService<B>,
-        Index::Future: Send + 'static,
-        Create: ResourceService<B>,
-        Create::Future: Send + 'static,
-        New: ResourceService<B>,
-        New::Future: Send + 'static,
-        Show: ResourceService<B>,
-        Show::Future: Send + 'static,
-        Edit: ResourceService<B>,
-        Edit::Future: Send + 'static,
-        Update: ResourceService<B>,
-        Update::Future: Send + 'static,
-        Destroy: ResourceService<B>,
-        Destroy::Future: Send + 'static,
-        Nest: ResourceService<B>,
-        Nest::Future: Send + 'static,
-        NestCollection: ResourceService<B>,
-        NestCollection::Future: Send + 'static,
-    {
+pub trait Resource<B = Body> {
+    fn into_router(self) -> Router<B>;
+}
+
+impl<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B> Resource<B>
+    for ResourceBuilder<Index, Create, New, Show, Edit, Update, Destroy, Nest, NestCollection, B>
+where
+    Index: ResourceService<B>,
+    Index::Future: Send + 'static,
+    Create: ResourceService<B>,
+    Create::Future: Send + 'static,
+    New: ResourceService<B>,
+    New::Future: Send + 'static,
+    Show: ResourceService<B>,
+    Show::Future: Send + 'static,
+    Edit: ResourceService<B>,
+    Edit::Future: Send + 'static,
+    Update: ResourceService<B>,
+    Update::Future: Send + 'static,
+    Destroy: ResourceService<B>,
+    Destroy::Future: Send + 'static,
+    Nest: ResourceService<B>,
+    Nest::Future: Send + 'static,
+    NestCollection: ResourceService<B>,
+    NestCollection::Future: Send + 'static,
+    B: Send + 'static,
+{
+    fn into_router(self) -> Router<B> {
         let Self {
             path,
             index,
@@ -441,6 +459,27 @@ where
         }
 
         router
+    }
+}
+
+pub trait RouterExt<B>
+where
+    B: Send + 'static,
+{
+    fn resource<R>(self, resource: R) -> Router<B>
+    where
+        R: Resource<B>;
+}
+
+impl<B> RouterExt<B> for Router<B>
+where
+    B: Send + 'static,
+{
+    fn resource<R>(self, resource: R) -> Router<B>
+    where
+        R: Resource<B>,
+    {
+        self.merge(resource.into_router())
     }
 }
 
