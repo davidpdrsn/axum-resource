@@ -1,5 +1,6 @@
-use axum::Router;
+use axum::{extract::Path, Router};
 use axum_resource::Resource;
+use serde::Deserialize;
 use std::net::SocketAddr;
 
 #[tokio::main]
@@ -25,7 +26,10 @@ async fn main() {
                 .nest(
                     Resource::named("tweets")
                         // GET /users/:user_id/tweets/:tweet_id
-                        .show(|| async { "user_tweets#show" })
+                        .show(|Path(params): Path<UserTweetIds>| async move {
+                            dbg!(params);
+                            "user_tweets#show"
+                        })
                         .into_router(),
                 )
                 // nest another resources inside /users
@@ -50,4 +54,10 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+#[derive(Deserialize, Debug)]
+struct UserTweetIds {
+    users_id: u64,
+    tweets_id: u64,
 }

@@ -407,10 +407,10 @@ where
         }
 
         if let Some(edit) = edit {
-            router = router.route(&format!("/{}/:id/edit", path), get(edit))
+            router = router.route(&format!("/{}/:{}_id/edit", path, path), get(edit))
         }
 
-        let show_update_destroy_path = format!("/{}/:id", path);
+        let show_update_destroy_path = format!("/{}/:{}_id", path, path);
         let put_or_patch = MethodFilter::PUT | MethodFilter::PATCH;
         router = match (show, update, destroy) {
             (None, None, None) => router,
