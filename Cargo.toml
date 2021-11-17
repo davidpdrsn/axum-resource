@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.3"
+axum = { git = "https://github.com/tokio-rs/axum" }
 tower-service = "0.3"
 
 [dev-dependencies]
